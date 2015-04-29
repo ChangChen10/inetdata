@@ -163,55 +163,55 @@ collectgarbage()
 -- End of test loader section
 
 -- Estimate the per-channel mean/std (so that the loaders can normalize appropriately)
-if paths.filep(meanstdCache) then
-   local meanstd = torch.load(meanstdCache)
-   mean = meanstd.mean
-   std = meanstd.std
-   print('Loaded mean and std from cache.')
-else
-   local tm = torch.Timer()
-   local nSamples = 10000
-   print('Estimating the mean (per-channel, shared for all pixels) over ' .. nSamples .. ' randomly sampled training images')
-   local meanEstimate = {0,0,0}
-   for i=1,nSamples do
-      local img = trainLoader:sample(1)
-      for j=1,3 do
-         meanEstimate[j] = meanEstimate[j] + img[j]:mean()
-      end
-   end
-   for j=1,3 do
-      meanEstimate[j] = meanEstimate[j] / nSamples
-   end
-   mean = meanEstimate
+-- if paths.filep(meanstdCache) then
+--    local meanstd = torch.load(meanstdCache)
+--    mean = meanstd.mean
+--    std = meanstd.std
+--    print('Loaded mean and std from cache.')
+-- else
+--    local tm = torch.Timer()
+--    local nSamples = 10000
+--    print('Estimating the mean (per-channel, shared for all pixels) over ' .. nSamples .. ' randomly sampled training images')
+--    local meanEstimate = {0,0,0}
+--    for i=1,nSamples do
+--       local img = trainLoader:sample(1)
+--       for j=1,3 do
+--          meanEstimate[j] = meanEstimate[j] + img[j]:mean()
+--       end
+--    end
+--    for j=1,3 do
+--       meanEstimate[j] = meanEstimate[j] / nSamples
+--    end
+--    mean = meanEstimate
 
-   print('Estimating the std (per-channel, shared for all pixels) over ' .. nSamples .. ' randomly sampled training images')
-   local stdEstimate = {0,0,0}
-   for i=1,nSamples do
-      local img = trainLoader:sample(1)
-      for j=1,3 do
-         stdEstimate[j] = stdEstimate[j] + img[j]:std()
-      end
-   end
-   for j=1,3 do
-      stdEstimate[j] = stdEstimate[j] / nSamples
-   end
-   std = stdEstimate
+--    print('Estimating the std (per-channel, shared for all pixels) over ' .. nSamples .. ' randomly sampled training images')
+--    local stdEstimate = {0,0,0}
+--    for i=1,nSamples do
+--       local img = trainLoader:sample(1)
+--       for j=1,3 do
+--          stdEstimate[j] = stdEstimate[j] + img[j]:std()
+--       end
+--    end
+--    for j=1,3 do
+--       stdEstimate[j] = stdEstimate[j] / nSamples
+--    end
+--    std = stdEstimate
 
-   local cache = {}
-   cache.mean = mean
-   cache.std = std
-   torch.save(meanstdCache, cache)
-   print('Time to estimate:', tm:time().real)
-end
-print('Mean: ', mean[1], mean[2], mean[3], 'Std:', std[1], std[2], std[3])
+--    local cache = {}
+--    cache.mean = mean
+--    cache.std = std
+--    torch.save(meanstdCache, cache)
+--    print('Time to estimate:', tm:time().real)
+-- end
+-- print('Mean: ', mean[1], mean[2], mean[3], 'Std:', std[1], std[2], std[3])
 
-do -- just check if mean/std look good now
-   local testmean = 0
-   local teststd = 0
-   for i=1,100 do
-      local img = trainLoader:sample(1)
-      testmean = testmean + img:mean()
-      teststd  = teststd + img:std()
-   end
-   print('Stats of 100 randomly sampled images after normalizing. Mean: ' .. testmean/100 .. ' Std: ' .. teststd/100)
-end
+-- do -- just check if mean/std look good now
+--    local testmean = 0
+--    local teststd = 0
+--    for i=1,100 do
+--       local img = trainLoader:sample(1)
+--       testmean = testmean + img:mean()
+--       teststd  = teststd + img:std()
+--    end
+--    print('Stats of 100 randomly sampled images after normalizing. Mean: ' .. testmean/100 .. ' Std: ' .. teststd/100)
+-- end
