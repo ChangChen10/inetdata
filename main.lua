@@ -29,7 +29,7 @@ function getFeatures(inputsThread, labelsThread)
 
    features = convModule:forward(inputs)
    -- TODO: using these features to train
-
+   print(features)
 end
 
 for i=1,nTest/nTest do -- nTest is set in 1_data.lua

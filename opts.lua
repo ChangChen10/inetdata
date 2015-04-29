@@ -28,7 +28,7 @@ function M.parse(arg)
     cmd:option('-GPU',                1, 'Default preferred GPU')
     cmd:option('-nGPU',               1, 'Number of GPUs to use by default')
     ------------- Data options ------------------------
-    cmd:option('-nDonkeys',        1, 'number of donkeys to initialize (data loading threads)')
+    cmd:option('-nDonkeys',        0, 'number of donkeys to initialize (data loading threads)')
     ------------- Training options --------------------
     cmd:option('-nEpochs',         55,    'Number of total epochs to run')
     cmd:option('-epochSize',       10000, 'Number of batches per epoch')
