@@ -285,8 +285,8 @@ function dataset:__init(...)
             end
          end
       end
+      self.perm = torch.randperm(self.testIndicesSize)
    end
-   self.perm = torch.randperm(self.testIndicesSize)
 end
 
 -- size(), size(class)
