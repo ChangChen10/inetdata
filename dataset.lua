@@ -286,6 +286,7 @@ function dataset:__init(...)
          end
       end
    end
+   self.perm = torch.randperm(self.testIndicesSize)
 end
 
 -- size(), size(class)
@@ -405,10 +406,10 @@ function dataset:get(i1, i2)
    local scalarTable = {}
    for i=1,quantity do
       -- load the sample
-      local imgpath = ffi.string(torch.data(self.imagePath[indices[i]]))
+      local imgpath = ffi.string(torch.data(self.imagePath[self.perm[indices[i]]]))
       local out = self:sampleHookTest(imgpath)
       table.insert(dataTable, out)
-      table.insert(scalarTable, self.imageClass[indices[i]])
+      table.insert(scalarTable, self.imageClass[self.perm[indices[i]]])
    end
    local data, scalarLabels, labels = tableToOutput(self, dataTable, scalarTable)
    return data, scalarLabels, labels

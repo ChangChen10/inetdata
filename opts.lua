@@ -9,7 +9,7 @@
 local M = { }
 
 function M.parse(arg)
-   local defaultDir = paths.concat(os.getenv('HOME'), 'fbcunn_imagenet')
+   local defaultDir = paths.concat(os.getenv('HOME'), 'storage')
 
     local cmd = torch.CmdLine()
     cmd:text()
@@ -22,14 +22,13 @@ function M.parse(arg)
                defaultDir ..'/imagenet_runs',
                'subdirectory in which to save/log experiments')
     cmd:option('-data',
-               defaultDir .. '/imagenet_raw_images/256',
+               defaultDir .. '/imagenet_2012',
                'Home of ImageNet dataset')
     cmd:option('-manualSeed',         2, 'Manually set RNG seed')
     cmd:option('-GPU',                1, 'Default preferred GPU')
     cmd:option('-nGPU',               1, 'Number of GPUs to use by default')
-    cmd:option('-backend',     'cudnn', 'Options: cudnn | fbcunn | cunn')
     ------------- Data options ------------------------
-    cmd:option('-nDonkeys',        2, 'number of donkeys to initialize (data loading threads)')
+    cmd:option('-nDonkeys',        1, 'number of donkeys to initialize (data loading threads)')
     ------------- Training options --------------------
     cmd:option('-nEpochs',         55,    'Number of total epochs to run')
     cmd:option('-epochSize',       10000, 'Number of batches per epoch')
@@ -41,18 +40,11 @@ function M.parse(arg)
     cmd:option('-momentum',        0.9,  'momentum')
     cmd:option('-weightDecay',     5e-4, 'weight decay')
     ---------- Model options ----------------------------------
-    cmd:option('-netType',     'alexnet', 'Options: alexnet | overfeat')
-    cmd:option('-retrain',     'none', 'provide path to model to retrain with')
-    cmd:option('-optimState',  'none', 'provide path to an optimState to reload from')
+
     cmd:text()
 
     local opt = cmd:parse(arg or {})
-    -- add commandline specified options
-    opt.save = paths.concat(opt.cache,
-                            cmd:string('alexnet12', opt,
-                                       {retrain=true, optimState=true, cache=true, data=true}))
-    -- add date/time
-    opt.save = paths.concat(opt.save, ',' .. os.date():gsub(' ',''))
+
     return opt
 end
 
