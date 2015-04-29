@@ -13,6 +13,7 @@ torch.setdefaulttensortype('torch.FloatTensor')
 
 paths.dofile('data.lua')
 paths.dofile('util.lua')
+convModule = torch.load('convModule.t7')
 
 local inputsCPU = torch.FloatTensor()
 local labelsCPU = torch.LongTensor()
