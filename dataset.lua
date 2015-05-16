@@ -5,6 +5,7 @@ local class = require('pl.class')
 local dir = require 'pl.dir'
 local tablex = require 'pl.tablex'
 local argcheck = require 'argcheck'
+local gm = assert(require 'graphicsmagick')
 require 'sys'
 require 'xlua'
 require 'image'
@@ -285,8 +286,9 @@ function dataset:__init(...)
             end
          end
       end
-      print(self.testIndicesSize)
       self.perm = torch.randperm(self.testIndicesSize)
+      self.experm = torch.randperm(self.testIndicesSize * 10)
+
    end
 end
 
@@ -331,6 +333,54 @@ function dataset:defaultSampleHook(imgpath)
    local out = image.load(imgpath, self.loadSize[1])
    out = image.scale(out, self.sampleSize[3], self.sampleSize[2])
    return out
+end
+
+-- by default, just load the image and return it
+function dataset:sampleHook(imgpath, num)
+  local oH = 224
+  local oW = 224
+  local out = torch.Tensor(1, 3, oW, oH)
+
+  local input = gm.Image():load(imgpath, self.loadSize[3], self.loadSize[2])
+  -- find the smaller dimension, and resize it to 256 (while keeping aspect ratio)
+  local iW, iH = input:size()
+  if iW < iH then
+  input:size(256, 256 * iH / iW);
+  else
+  input:size(256 * iW / iH, 256);
+  end
+  iW, iH = input:size();
+  local im = input:toTensor('float','RGB','DHW')
+  -- mean/std
+  for i=1,3 do -- channels
+  if mean then im[{{i},{},{}}]:add(-mean[i]) end
+  if  std then im[{{i},{},{}}]:div(std[i]) end
+  end
+
+  local w1 = math.ceil((iW-oW)/2)
+  local h1 = math.ceil((iH-oH)/2)
+
+  local k = math.floor(num / 2)
+
+  if k == 0 then
+    out = image.crop(im, w1, h1, w1+oW, h1+oW)  -- center patch
+  elseif k == 1 then
+    out = image.crop(im, w1, h1, w1+oW, h1+oW)  -- top-left
+  elseif k == 2 then
+    out = image.crop(im, w1, h1, w1+oW, h1+oW)  -- top-right
+  elseif k == 3 then
+    out = image.crop(im, w1, h1, w1+oW, h1+oW)  -- bottom-left
+  elseif k == 4 then
+    out = image.crop(im, w1, h1, w1+oW, h1+oW)  -- bottom-right
+  else
+    error('Number too big');
+  end
+
+  if num % 2 == 1 then
+    out = image.hflip(out)
+  end
+
+  return out
 end
 
 -- getByClass
@@ -415,6 +465,73 @@ function dataset:get(i1, i2)
    local data, scalarLabels, labels = tableToOutput(self, dataTable, scalarTable)
    return data, scalarLabels, labels
 end
+
+function dataset:rget(i1, i2)
+  local indices, quantity
+   if type(i1) == 'number' then
+      if type(i2) == 'number' then -- range of indices
+         indices = torch.range(i1, i2);
+         quantity = i2 - i1 + 1;
+      else -- single index
+         indices = {i1}; quantity = 1
+      end
+   elseif type(i1) == 'table' then
+      indices = i1; quantity = #i1;         -- table
+   elseif (type(i1) == 'userdata' and i1:nDimension() == 1) then
+      indices = i1; quantity = (#i1)[1];    -- tensor
+   else
+      error('Unsupported input types: ' .. type(i1) .. ' ' .. type(i2))
+   end
+   assert(quantity > 0)
+   -- now that indices has been initialized, get the samples
+   local dataTable = {}
+   local scalarTable = {}
+   for i=1,quantity do
+      -- load the sample
+      local n = self.experm[indices[i]]
+      local k = math.ceil(n / 10)
+      local num = n % 10
+      local imgpath = ffi.string(torch.data(self.imagePath[k]))
+      local out = self:sampleHook(imgpath, num)
+      table.insert(dataTable, out)
+      table.insert(scalarTable, self.imageClass[k])
+   end
+   local data, scalarLabels, labels = tableToOutput(self, dataTable, scalarTable)
+   return data, scalarLabels, labels
+end
+
+function dataset:cget(i1, i2)
+  local indices, quantity
+   if type(i1) == 'number' then
+      if type(i2) == 'number' then -- range of indices
+         indices = torch.range(i1, i2);
+         quantity = i2 - i1 + 1;
+      else -- single index
+         indices = {i1}; quantity = 1
+      end
+   elseif type(i1) == 'table' then
+      indices = i1; quantity = #i1;         -- table
+   elseif (type(i1) == 'userdata' and i1:nDimension() == 1) then
+      indices = i1; quantity = (#i1)[1];    -- tensor
+   else
+      error('Unsupported input types: ' .. type(i1) .. ' ' .. type(i2))
+   end
+   assert(quantity > 0)
+   -- now that indices has been initialized, get the samples
+   local dataTable = {}
+   local scalarTable = {}
+   for i=1,quantity do
+      -- load the sample
+      local n = self.perm[indices[i]]
+      local imgpath = ffi.string(torch.data(self.imagePath[n]))
+      local out = self:sampleHook(imgpath, 0)
+      table.insert(dataTable, out)
+      table.insert(scalarTable, self.imageClass[n])
+   end
+   local data, scalarLabels, labels = tableToOutput(self, dataTable, scalarTable)
+   return data, scalarLabels, labels
+end
+
 
 function dataset:test(quantity)
    if self.split == 100 then

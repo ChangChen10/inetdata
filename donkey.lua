@@ -149,7 +149,7 @@ if paths.filep(testCache) then
 else
    print('Creating test metadata')
    testLoader = dataLoader{
-      paths = {paths.concat(opt.data, 'train')},
+      paths = {paths.concat(opt.data, opt.dataType)},
       loadSize = {3, 256, 256},
       sampleSize = {3, 224, 224},
       split = 0,

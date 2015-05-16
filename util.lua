@@ -32,3 +32,23 @@ function sendTensor(inputs)
    inputs:cdata().storage = nil
    return {i_stg, size, ttype}
 end
+
+function receiveTensor(obj, buffer)
+   local pointer = obj[1]
+   local size = obj[2]
+   local ttype = obj[3]
+   if buffer then
+      buffer:resize(size)
+      assert(buffer:type() == ttype, 'Buffer is wrong type')
+   else
+      buffer = torch[ttype].new():resize(size)      
+   end
+   if ttype == 'torch.FloatTensor' then
+      setFloatStorage(buffer, pointer)
+   elseif ttype == 'torch.LongTensor' then
+      setLongStorage(buffer, pointer)
+   else
+      error('Unknown type')
+   end
+   return buffer
+end
